@@ -1,0 +1,13 @@
+[build]
+  command = "npm run build:web"
+  publish = "dist"
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF"
+
+[build.environment]
+  NODE_VERSION = "18"
+  EXPO_PUBLIC_SUPABASE_URL = "https://ijoprujrwsdaoqkrfrkw.supabase.co"
+  EXPO_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlqb3BydWpyd3NkYW9xa3Jmcmt3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwOTQzMzEsImV4cCI6MjA3MDY3MDMzMX0.hyZRgdBeu5hWNiXM5qGdpinkzlUpLis6GM4VpvU3sxw"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
