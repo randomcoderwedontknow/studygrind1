@@ -8,10 +8,9 @@ import {
   ScrollView,
   Modal,
   TextInput,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Play, Pause, Square, Settings, Volume2, X, CircleStop as StopCircle } from 'lucide-react-native';
+import { Play, Pause, Square, Settings, Volume2, X, CircleStop as StopCircle, Coffee } from 'lucide-react-native';
 import { useTimerStore } from '@/stores/timerStore';
 import { useTaskStore } from '@/stores/taskStore';
 import { useThemeStore } from '@/stores/themeStore';
@@ -45,6 +44,7 @@ export default function TimerScreen() {
   const { currentTheme } = useThemeStore();
   const [showCustomModal, setShowCustomModal] = useState(false);
   const [customMinutes, setCustomMinutes] = useState('25');
+  const [showEndEarlyModal, setShowEndEarlyModal] = useState(false);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -89,18 +89,12 @@ export default function TimerScreen() {
   };
 
   const handleEndEarly = () => {
-    Alert.alert(
-      'End Session Early?',
-      'Are you sure you want to end this session? You\'ll still earn points for the time you\'ve studied.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'End Session', 
-          style: 'destructive',
-          onPress: endSessionEarly
-        }
-      ]
-    );
+    setShowEndEarlyModal(true);
+  };
+
+  const confirmEndEarly = () => {
+    endSessionEarly();
+    setShowEndEarlyModal(false);
   };
 
   const getNextBreakInfo = () => {
@@ -225,21 +219,16 @@ export default function TimerScreen() {
 
         {/* Timer Controls */}
         <View style={styles.controls}>
-          {canEndEarly ? (
-            <TouchableOpacity
-              style={[styles.controlButton, styles.endEarlyButton]}
-              onPress={handleEndEarly}
-            >
+          <TouchableOpacity
+            style={[styles.controlButton, styles.endButton]}
+            onPress={canEndEarly ? handleEndEarly : stopTimer}
+          >
+            {canEndEarly ? (
               <StopCircle size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              style={[styles.controlButton, styles.stopButton]}
-              onPress={stopTimer}
-            >
+            ) : (
               <Square size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-          )}
+            )}
+          </TouchableOpacity>
           
           <TouchableOpacity
             style={[
@@ -319,6 +308,36 @@ export default function TimerScreen() {
                 onPress={handleCustomTimer}
               >
                 <Text style={styles.setText}>Set Timer</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* End Early Confirmation Modal */}
+      <Modal
+        visible={showEndEarlyModal}
+        animationType="fade"
+        transparent={true}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.confirmationModal}>
+            <Text style={styles.confirmationTitle}>End Session Early?</Text>
+            <Text style={styles.confirmationText}>
+              Are you sure you want to end this session? You'll still earn points for the time you've studied.
+            </Text>
+            <View style={styles.confirmationButtons}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setShowEndEarlyModal(false)}
+              >
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.confirmButton}
+                onPress={confirmEndEarly}
+              >
+                <Text style={styles.confirmText}>End Session</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -441,7 +460,7 @@ const styles = StyleSheet.create({
   stopButton: {
     backgroundColor: '#EF4444',
   },
-  endEarlyButton: {
+  endButton: {
     backgroundColor: '#F59E0B',
   },
   modalOverlay: {
@@ -517,6 +536,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   setText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  confirmationModal: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    width: width * 0.85,
+    maxWidth: 350,
+  },
+  confirmationTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  confirmationText: {
+    fontSize: 16,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 24,
+  },
+  confirmationButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  confirmButton: {
+    flex: 1,
+    backgroundColor: '#EF4444',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  confirmText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',

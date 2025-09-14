@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Gamepad2, Lock, Play, Coins, Clock } from 'lucide-react-native';
@@ -32,6 +31,10 @@ export default function GamesScreen() {
   const { isPageLocked } = useFocusLockStore();
   const { currentTheme } = useThemeStore();
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'word' | 'number' | 'memory' | 'logic'>('all');
+  const [showInsufficientPointsModal, setShowInsufficientPointsModal] = useState<{show: boolean, game: MiniGame | null, needed: number}>({show: false, game: null, needed: 0});
+  const [showPurchaseModal, setShowPurchaseModal] = useState<{show: boolean, game: MiniGame | null}>({show: false, game: null});
+  const [showGameCompleteModal, setShowGameCompleteModal] = useState<{show: boolean, points: number}>({show: false, points: 0});
+  const [showExitGameModal, setShowExitGameModal] = useState(false);
 
   const isLocked = isPageLocked('/(tabs)/games');
 
@@ -49,28 +52,17 @@ export default function GamesScreen() {
 
   const handlePurchaseGame = (game: MiniGame) => {
     if (points < game.price) {
-      Alert.alert(
-        'Insufficient Points',
-        `You need ${game.price - points} more focus points to unlock ${game.name}. Complete more study sessions to earn points!`
-      );
+      setShowInsufficientPointsModal({show: true, game, needed: game.price - points});
       return;
     }
 
-    Alert.alert(
-      'Unlock Game',
-      `Unlock ${game.name} for ${game.price} focus points?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Unlock',
-          onPress: () => {
-            if (purchaseGame(game.id)) {
-              Alert.alert('Game Unlocked!', `${game.name} is now available to play!`);
-            }
-          }
-        }
-      ]
-    );
+    setShowPurchaseModal({show: true, game});
+  };
+
+  const confirmPurchase = () => {
+    if (showPurchaseModal.game && purchaseGame(showPurchaseModal.game.id)) {
+      setShowPurchaseModal({show: false, game: null});
+    }
   };
 
   const handlePlayGame = (game: MiniGame) => {
@@ -83,25 +75,19 @@ export default function GamesScreen() {
     const pointsEarned = Math.floor(score / 2); // Convert score to points
     if (pointsEarned > 0) {
       addPoints(pointsEarned);
-      Alert.alert(
-        'Game Complete! 🎉',
-        `Great job! You earned ${pointsEarned} focus points.`,
-        [{ text: 'Awesome!', onPress: () => setCurrentGame(null) }]
-      );
+      setShowGameCompleteModal({show: true, points: pointsEarned});
     } else {
       setCurrentGame(null);
     }
   };
 
   const handleGameExit = () => {
-    Alert.alert(
-      'Exit Game?',
-      'Are you sure you want to exit? Your progress will be lost.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Exit', onPress: () => setCurrentGame(null) }
-      ]
-    );
+    setShowExitGameModal(true);
+  };
+
+  const confirmGameExit = () => {
+    setCurrentGame(null);
+    setShowExitGameModal(false);
   };
 
   // Render current game if one is active
@@ -254,6 +240,113 @@ export default function GamesScreen() {
           </Text>
         </View>
       </ScrollView>
+
+      {/* Insufficient Points Modal */}
+      <Modal
+        visible={showInsufficientPointsModal.show}
+        animationType="fade"
+        transparent={true}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.confirmationModal}>
+            <Text style={styles.confirmationTitle}>Insufficient Points</Text>
+            <Text style={styles.confirmationText}>
+              You need {showInsufficientPointsModal.needed} more focus points to unlock {showInsufficientPointsModal.game?.name}. Complete more study sessions to earn points!
+            </Text>
+            <TouchableOpacity
+              style={styles.okButton}
+              onPress={() => setShowInsufficientPointsModal({show: false, game: null, needed: 0})}
+            >
+              <Text style={styles.okButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Purchase Confirmation Modal */}
+      <Modal
+        visible={showPurchaseModal.show}
+        animationType="fade"
+        transparent={true}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.confirmationModal}>
+            <Text style={styles.confirmationTitle}>Unlock Game</Text>
+            <Text style={styles.confirmationText}>
+              Unlock {showPurchaseModal.game?.name} for {showPurchaseModal.game?.price} focus points?
+            </Text>
+            <View style={styles.confirmationButtons}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setShowPurchaseModal({show: false, game: null})}
+              >
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.confirmButton}
+                onPress={confirmPurchase}
+              >
+                <Text style={styles.confirmText}>Unlock</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Game Complete Modal */}
+      <Modal
+        visible={showGameCompleteModal.show}
+        animationType="fade"
+        transparent={true}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.confirmationModal}>
+            <Text style={styles.confirmationTitle}>Game Complete! 🎉</Text>
+            <Text style={styles.confirmationText}>
+              Great job! You earned {showGameCompleteModal.points} focus points.
+            </Text>
+            <TouchableOpacity
+              style={styles.okButton}
+              onPress={() => {
+                setShowGameCompleteModal({show: false, points: 0});
+                setCurrentGame(null);
+              }}
+            >
+              <Text style={styles.okButtonText}>Awesome!</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Exit Game Confirmation Modal */}
+      <Modal
+        visible={showExitGameModal}
+        animationType="fade"
+        transparent={true}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.confirmationModal}>
+            <Text style={styles.confirmationTitle}>Exit Game?</Text>
+            <Text style={styles.confirmationText}>
+              Are you sure you want to exit? Your progress will be lost.
+            </Text>
+            <View style={styles.confirmationButtons}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setShowExitGameModal(false)}
+              >
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.confirmButton}
+                onPress={confirmGameExit}
+              >
+                <Text style={styles.confirmText}>Exit</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -454,5 +547,71 @@ const styles = StyleSheet.create({
     color: '#047857',
     lineHeight: 20,
     marginBottom: 8,
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  confirmationModal: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    width: '85%',
+    maxWidth: 350,
+  },
+  confirmationTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  confirmationText: {
+    fontSize: 16,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 24,
+  },
+  confirmationButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  cancelText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  confirmButton: {
+    flex: 1,
+    backgroundColor: '#10B981',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  confirmText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  okButton: {
+    backgroundColor: '#10B981',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  okButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
   },
 });

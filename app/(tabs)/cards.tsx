@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   Modal,
   TextInput,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus, X, BookOpen, CreditCard as Edit3, Trash2, Play } from 'lucide-react-native';
@@ -47,6 +46,8 @@ export default function CardsScreen() {
   const [deckDescription, setDeckDescription] = useState('');
   const [cardFront, setCardFront] = useState('');
   const [cardBack, setCardBack] = useState('');
+  const [showDeleteDeckModal, setShowDeleteDeckModal] = useState<{show: boolean, deckId: string, deckName: string}>({show: false, deckId: '', deckName: ''});
+  const [showNoCardsModal, setShowNoCardsModal] = useState(false);
 
   const handleCreateDeck = () => {
     if (!deckName.trim()) return;
@@ -72,24 +73,18 @@ export default function CardsScreen() {
   };
 
   const handleDeleteDeck = (deckId: string, deckName: string) => {
-    Alert.alert(
-      'Delete Deck',
-      `Are you sure you want to delete "${deckName}"? This will also delete all cards in this deck.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive',
-          onPress: () => deleteDeck(deckId)
-        }
-      ]
-    );
+    setShowDeleteDeckModal({show: true, deckId, deckName});
+  };
+
+  const confirmDeleteDeck = () => {
+    deleteDeck(showDeleteDeckModal.deckId);
+    setShowDeleteDeckModal({show: false, deckId: '', deckName: ''});
   };
 
   const handleStartReview = (deckId: string) => {
     const cardsForReview = getCardsForReview(deckId);
     if (cardsForReview.length === 0) {
-      Alert.alert('No Cards Due', 'All cards in this deck are up to date! Come back later.');
+      setShowNoCardsModal(true);
       return;
     }
     startReviewSession(deckId);
@@ -99,11 +94,6 @@ export default function CardsScreen() {
     const pointsEarned = endReviewSession();
     if (pointsEarned > 0) {
       addPoints(pointsEarned);
-      Alert.alert(
-        'Review Complete! 🎉',
-        `Great job! You earned ${pointsEarned} focus points.`,
-        [{ text: 'Awesome!' }]
-      );
     }
   };
 
@@ -415,6 +405,58 @@ export default function CardsScreen() {
           </View>
         </SafeAreaView>
       </Modal>
+
+      {/* Delete Deck Confirmation Modal */}
+      <Modal
+        visible={showDeleteDeckModal.show}
+        animationType="fade"
+        transparent={true}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.confirmationModal}>
+            <Text style={styles.confirmationTitle}>Delete Deck</Text>
+            <Text style={styles.confirmationText}>
+              Are you sure you want to delete "{showDeleteDeckModal.deckName}"? This will also delete all cards in this deck.
+            </Text>
+            <View style={styles.confirmationButtons}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setShowDeleteDeckModal({show: false, deckId: '', deckName: ''})}
+              >
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.deleteConfirmButton}
+                onPress={confirmDeleteDeck}
+              >
+                <Text style={styles.deleteConfirmText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* No Cards Due Modal */}
+      <Modal
+        visible={showNoCardsModal}
+        animationType="fade"
+        transparent={true}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.confirmationModal}>
+            <Text style={styles.confirmationTitle}>No Cards Due</Text>
+            <Text style={styles.confirmationText}>
+              All cards in this deck are up to date! Come back later.
+            </Text>
+            <TouchableOpacity
+              style={styles.okButton}
+              onPress={() => setShowNoCardsModal(false)}
+            >
+              <Text style={styles.okButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -674,6 +716,60 @@ const styles = StyleSheet.create({
     backgroundColor: '#D1D5DB',
   },
   createText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  confirmationModal: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    width: '85%',
+    maxWidth: 350,
+  },
+  confirmationTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  confirmationText: {
+    fontSize: 16,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 24,
+  },
+  confirmationButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  deleteConfirmButton: {
+    flex: 1,
+    backgroundColor: '#EF4444',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  deleteConfirmText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  okButton: {
+    backgroundColor: '#10B981',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  okButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
