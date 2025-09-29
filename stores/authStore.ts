@@ -8,7 +8,6 @@ export interface User {
   dateJoined: Date;
   totalHours: number;
   isOwner?: boolean;
-  isAdmin?: boolean;
 }
 
 interface AuthState {

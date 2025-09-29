@@ -6,11 +6,12 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
+  Alert,
   FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { X, Users, MessageSquare, ChartBar as BarChart3, Palette, Shield, Download, Trash2, Plus, CreditCard as Edit, Search, UserPlus } from 'lucide-react-native';
+import { X, Users, MessageSquare, ChartBar as BarChart3, Palette, Shield, Download, Trash2, Plus, CreditCard as Edit, Search } from 'lucide-react-native';
 import { useAuthStore } from '@/stores/authStore';
 import { useAppStore } from '@/stores/appStore';
 
@@ -35,13 +36,6 @@ export default function OwnerSettingsScreen() {
   const [newTask, setNewTask] = useState('');
   const [newPrimaryColor, setNewPrimaryColor] = useState(primaryColor);
   const [newAccentColor, setNewAccentColor] = useState(accentColor);
-  const [showCreateAdminModal, setShowCreateAdminModal] = useState(false);
-  const [adminName, setAdminName] = useState('');
-  const [adminEmail, setAdminEmail] = useState('');
-  const [showDeleteUserModal, setShowDeleteUserModal] = useState<{show: boolean, userId: string, userName: string}>({show: false, userId: '', userName: ''});
-  const [showResetPasswordModal, setShowResetPasswordModal] = useState<{show: boolean, userId: string, userName: string, newPassword: string}>({show: false, userId: '', userName: '', newPassword: ''});
-  const [showExportModal, setShowExportModal] = useState(false);
-  const [showClearDataModal, setShowClearDataModal] = useState(false);
 
   React.useEffect(() => {
     // Load all users when component mounts
@@ -58,57 +52,57 @@ export default function OwnerSettingsScreen() {
   const mostPopularTimer = 'Pomodoro'; // Mock data
 
   const handleDeleteUser = (userId: string, userName: string) => {
-    setShowDeleteUserModal({show: true, userId, userName});
-  };
-
-  const confirmDeleteUser = () => {
-    deleteUser(showDeleteUserModal.userId);
-    setShowDeleteUserModal({show: false, userId: '', userName: ''});
+    Alert.alert(
+      'Delete User',
+      `Are you sure you want to delete ${userName}? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: () => deleteUser(userId)
+        }
+      ]
+    );
   };
 
   const handleResetPassword = (userId: string, userName: string) => {
-    const newPassword = Math.random().toString(36).slice(-8);
-    resetUserPassword(userId, newPassword);
-    setShowResetPasswordModal({show: true, userId, userName, newPassword});
+    Alert.alert(
+      'Reset Password',
+      `Reset password for ${userName}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Reset',
+          onPress: () => {
+            const newPassword = Math.random().toString(36).slice(-8);
+            resetUserPassword(userId, newPassword);
+            Alert.alert('Password Reset', `New password: ${newPassword}`);
+          }
+        }
+      ]
+    );
   };
 
   const handleExportData = () => {
     const data = exportData();
-    setShowExportModal(true);
+    Alert.alert('Data Exported', 'App data has been exported successfully.');
     console.log('Exported data:', data);
   };
 
   const handleClearTestData = () => {
-    setShowClearDataModal(true);
-  };
-
-  const confirmClearData = () => {
-    clearTestData();
-    setShowClearDataModal(false);
-  };
-
-  const handleCreateAdmin = async () => {
-    if (!adminName.trim() || !adminEmail.trim()) return;
-    
-    try {
-      // Generate a random password for the admin
-      const adminPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
-      
-      // In a real app, this would create the admin account in the database
-      // For now, we'll just show the credentials
-      setShowResetPasswordModal({
-        show: true, 
-        userId: 'new-admin', 
-        userName: adminName, 
-        newPassword: adminPassword
-      });
-      
-      setAdminName('');
-      setAdminEmail('');
-      setShowCreateAdminModal(false);
-    } catch (error) {
-      console.error('Error creating admin:', error);
-    }
+    Alert.alert(
+      'Clear Test Data',
+      'This will remove all test data. Are you sure?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Clear', 
+          style: 'destructive',
+          onPress: clearTestData
+        }
+      ]
+    );
   };
 
   const renderUserItem = ({ item }: { item: any }) => (
@@ -180,16 +174,6 @@ export default function OwnerSettingsScreen() {
           <Text style={styles.sectionTitle}>
             <Users size={20} color="#D97706" /> User Management
           </Text>
-          
-          {/* Create Admin Button */}
-          <TouchableOpacity
-            style={styles.createAdminButton}
-            onPress={() => setShowCreateAdminModal(true)}
-          >
-            <UserPlus size={20} color="#FFFFFF" />
-            <Text style={styles.createAdminText}>Create Admin Account</Text>
-          </TouchableOpacity>
-          
           <View style={styles.searchContainer}>
             <Search size={20} color="#6B7280" />
             <TextInput
@@ -370,186 +354,6 @@ export default function OwnerSettingsScreen() {
           </View>
         </View>
       </ScrollView>
-
-      {/* Create Admin Modal */}
-      <Modal
-        visible={showCreateAdminModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-      >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Create Admin Account</Text>
-            <TouchableOpacity onPress={() => setShowCreateAdminModal(false)}>
-              <X size={24} color="#6B7280" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.modalContent}>
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Admin Name</Text>
-              <TextInput
-                style={styles.input}
-                value={adminName}
-                onChangeText={setAdminName}
-                placeholder="Enter admin name"
-                placeholderTextColor="#9CA3AF"
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Admin Email</Text>
-              <TextInput
-                style={styles.input}
-                value={adminEmail}
-                onChangeText={setAdminEmail}
-                placeholder="Enter admin email"
-                placeholderTextColor="#9CA3AF"
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
-
-            <Text style={styles.adminNote}>
-              A random secure password will be generated for this admin account.
-            </Text>
-          </View>
-
-          <View style={styles.modalFooter}>
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={() => setShowCreateAdminModal(false)}
-            >
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.createButton, (!adminName.trim() || !adminEmail.trim()) && styles.disabledButton]}
-              onPress={handleCreateAdmin}
-              disabled={!adminName.trim() || !adminEmail.trim()}
-            >
-              <Text style={styles.createText}>Create Admin</Text>
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      </Modal>
-
-      {/* Delete User Confirmation Modal */}
-      <Modal
-        visible={showDeleteUserModal.show}
-        animationType="fade"
-        transparent={true}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.confirmationModal}>
-            <Text style={styles.confirmationTitle}>Delete User</Text>
-            <Text style={styles.confirmationText}>
-              Are you sure you want to delete {showDeleteUserModal.userName}? This action cannot be undone.
-            </Text>
-            <View style={styles.confirmationButtons}>
-              <TouchableOpacity
-                style={styles.cancelConfirmButton}
-                onPress={() => setShowDeleteUserModal({show: false, userId: '', userName: ''})}
-              >
-                <Text style={styles.cancelConfirmText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.deleteConfirmButton}
-                onPress={confirmDeleteUser}
-              >
-                <Text style={styles.deleteConfirmText}>Delete</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Password Reset Modal */}
-      <Modal
-        visible={showResetPasswordModal.show}
-        animationType="fade"
-        transparent={true}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.confirmationModal}>
-            <Text style={styles.confirmationTitle}>
-              {showResetPasswordModal.userId === 'new-admin' ? 'Admin Created!' : 'Password Reset'}
-            </Text>
-            <Text style={styles.confirmationText}>
-              {showResetPasswordModal.userId === 'new-admin' 
-                ? `Admin account created for ${showResetPasswordModal.userName}`
-                : `Password reset for ${showResetPasswordModal.userName}`
-              }
-            </Text>
-            <View style={styles.passwordContainer}>
-              <Text style={styles.passwordLabel}>
-                {showResetPasswordModal.userId === 'new-admin' ? 'Login Credentials:' : 'New Password:'}
-              </Text>
-              {showResetPasswordModal.userId === 'new-admin' && (
-                <Text style={styles.passwordText}>Email: {adminEmail}</Text>
-              )}
-              <Text style={styles.passwordText}>Password: {showResetPasswordModal.newPassword}</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.okButton}
-              onPress={() => setShowResetPasswordModal({show: false, userId: '', userName: '', newPassword: ''})}
-            >
-              <Text style={styles.okButtonText}>OK</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Export Data Modal */}
-      <Modal
-        visible={showExportModal}
-        animationType="fade"
-        transparent={true}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.confirmationModal}>
-            <Text style={styles.confirmationTitle}>Data Exported</Text>
-            <Text style={styles.confirmationText}>
-              App data has been exported successfully.
-            </Text>
-            <TouchableOpacity
-              style={styles.okButton}
-              onPress={() => setShowExportModal(false)}
-            >
-              <Text style={styles.okButtonText}>OK</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Clear Data Confirmation Modal */}
-      <Modal
-        visible={showClearDataModal}
-        animationType="fade"
-        transparent={true}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.confirmationModal}>
-            <Text style={styles.confirmationTitle}>Clear Test Data</Text>
-            <Text style={styles.confirmationText}>
-              This will remove all test data. Are you sure?
-            </Text>
-            <View style={styles.confirmationButtons}>
-              <TouchableOpacity
-                style={styles.cancelConfirmButton}
-                onPress={() => setShowClearDataModal(false)}
-              >
-                <Text style={styles.cancelConfirmText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.deleteConfirmButton}
-                onPress={confirmClearData}
-              >
-                <Text style={styles.deleteConfirmText}>Clear</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -621,21 +425,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#D97706',
     marginTop: 4,
-  },
-  createAdminButton: {
-    backgroundColor: '#10B981',
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 16,
-  },
-  createAdminText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
   },
   searchContainer: {
     flexDirection: 'row',
@@ -842,158 +631,6 @@ const styles = StyleSheet.create({
   ownerIndicatorText: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1F2937',
-  },
-  modalContent: {
-    flex: 1,
-    padding: 20,
-  },
-  inputGroup: {
-    marginBottom: 24,
-  },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: '#1F2937',
-  },
-  adminNote: {
-    fontSize: 14,
-    color: '#6B7280',
-    fontStyle: 'italic',
-    textAlign: 'center',
-    marginTop: 16,
-  },
-  modalFooter: {
-    flexDirection: 'row',
-    padding: 20,
-    gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-  },
-  createButton: {
-    flex: 2,
-    paddingVertical: 16,
-    borderRadius: 8,
-    backgroundColor: '#10B981',
-    alignItems: 'center',
-  },
-  disabledButton: {
-    backgroundColor: '#D1D5DB',
-  },
-  createText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  confirmationModal: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 24,
-    width: '85%',
-    maxWidth: 350,
-  },
-  confirmationTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  confirmationText: {
-    fontSize: 16,
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 24,
-  },
-  confirmationButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  cancelConfirmButton: {
-    flex: 1,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  cancelConfirmText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  deleteConfirmButton: {
-    flex: 1,
-    backgroundColor: '#EF4444',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  deleteConfirmText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  passwordContainer: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 24,
-  },
-  passwordLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
-  },
-  passwordText: {
-    fontSize: 14,
-    color: '#1F2937',
-    fontFamily: 'monospace',
-    marginBottom: 4,
-  },
-  okButton: {
-    backgroundColor: '#10B981',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  okButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
     color: '#FFFFFF',
   },
 });

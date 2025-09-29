@@ -2,20 +2,12 @@ import React from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
+  StyleSheet,
 } from 'react-native';
-import { BookOpen, Play, Calendar } from 'lucide-react-native';
-
-interface Deck {
-  id: string;
-  name: string;
-  description?: string;
-  cards: any[];
-  createdAt: Date;
-  lastStudied?: Date;
-  totalReviews: number;
-}
+import { BookOpen, Clock, Target, Award, ChevronRight } from 'lucide-react-native';
+import { Deck, useCardsStore } from '@/stores/cardsStore';
+import { useThemeStore } from '@/stores/themeStore';
 
 interface DeckCardProps {
   deck: Deck;
@@ -24,69 +16,70 @@ interface DeckCardProps {
 }
 
 export function DeckCard({ deck, onPress, onReview }: DeckCardProps) {
-  const getDueCards = () => {
-    // Simple logic to determine cards due for review
-    const now = new Date();
-    return deck.cards.filter(card => {
-      if (!card.nextReview) return true; // New cards are due
-      return new Date(card.nextReview) <= now;
-    }).length;
-  };
+  const { getDeckStats } = useCardsStore();
+  const { currentTheme } = useThemeStore();
+  const stats = getDeckStats(deck.id);
 
-  const dueCards = getDueCards();
+  const formatLastStudied = (date?: Date) => {
+    if (!date) return 'Never';
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return 'Today';
+    if (diffDays === 2) return 'Yesterday';
+    if (diffDays <= 7) return `${diffDays - 1} days ago`;
+    return date.toLocaleDateString();
+  };
 
   return (
     <TouchableOpacity style={styles.container} onPress={onPress}>
       <View style={styles.header}>
-        <View style={styles.iconContainer}>
-          <BookOpen size={24} color="#10B981" />
+        <View style={[styles.iconContainer, { backgroundColor: currentTheme.colors.secondary }]}>
+          <BookOpen size={24} color={currentTheme.colors.primary} />
         </View>
-        <View style={styles.info}>
-          <Text style={styles.name}>{deck.name}</Text>
+        <View style={styles.deckInfo}>
+          <Text style={styles.deckName}>{deck.name}</Text>
           {deck.description && (
-            <Text style={styles.description}>{deck.description}</Text>
+            <Text style={styles.deckDescription}>{deck.description}</Text>
           )}
         </View>
+        <ChevronRight size={20} color="#9CA3AF" />
       </View>
 
-      <View style={styles.stats}>
+      <View style={styles.statsContainer}>
         <View style={styles.statItem}>
-          <Text style={styles.statValue}>{deck.cards.length}</Text>
+          <Target size={16} color="#6B7280" />
+          <Text style={styles.statValue}>{stats.total}</Text>
           <Text style={styles.statLabel}>Cards</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statValue}>{dueCards}</Text>
+          <Clock size={16} color="#F59E0B" />
+          <Text style={styles.statValue}>{stats.dueForReview}</Text>
           <Text style={styles.statLabel}>Due</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statValue}>{deck.totalReviews}</Text>
-          <Text style={styles.statLabel}>Reviews</Text>
+          <Award size={16} color="#10B981" />
+          <Text style={styles.statValue}>{stats.mastered}</Text>
+          <Text style={styles.statLabel}>Mastered</Text>
         </View>
       </View>
 
-      {deck.lastStudied && (
-        <View style={styles.lastStudied}>
-          <Calendar size={14} color="#6B7280" />
-          <Text style={styles.lastStudiedText}>
-            Last studied: {deck.lastStudied.toLocaleDateString()}
-          </Text>
-        </View>
-      )}
-
-      <View style={styles.actions}>
-        <TouchableOpacity
-          style={[styles.actionButton, dueCards === 0 && styles.disabledButton]}
-          onPress={onReview}
-          disabled={dueCards === 0}
-        >
-          <Play size={16} color={dueCards === 0 ? "#9CA3AF" : "#FFFFFF"} />
-          <Text style={[
-            styles.actionButtonText,
-            dueCards === 0 && styles.disabledButtonText
-          ]}>
-            {dueCards === 0 ? 'Up to date' : `Review (${dueCards})`}
-          </Text>
-        </TouchableOpacity>
+      <View style={styles.footer}>
+        <Text style={styles.lastStudied}>
+          Last studied: {formatLastStudied(deck.lastStudied)}
+        </Text>
+        {stats.dueForReview > 0 && (
+          <TouchableOpacity
+            style={[styles.reviewButton, { backgroundColor: currentTheme.colors.primary }]}
+            onPress={(e) => {
+              e.stopPropagation();
+              onReview();
+            }}
+          >
+            <Text style={styles.reviewButtonText}>Review Now</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -97,9 +90,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
     borderRadius: 16,
     padding: 20,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    marginBottom: 16,
   },
   header: {
     flexDirection: 'row',
@@ -110,78 +103,59 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#ECFDF5',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  info: {
+  deckInfo: {
     flex: 1,
   },
-  name: {
+  deckName: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#1F2937',
-    marginBottom: 4,
+    marginBottom: 2,
   },
-  description: {
+  deckDescription: {
     fontSize: 14,
     color: '#6B7280',
   },
-  stats: {
+  statsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
     marginBottom: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    gap: 20,
   },
   statItem: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
   },
   statValue: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#1F2937',
   },
   statLabel: {
     fontSize: 12,
     color: '#6B7280',
-    marginTop: 2,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   lastStudied: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 16,
-  },
-  lastStudiedText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: '#9CA3AF',
   },
-  actions: {
-    alignItems: 'center',
+  reviewButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
   },
-  actionButton: {
-    backgroundColor: '#10B981',
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    minWidth: 140,
-    justifyContent: 'center',
-  },
-  disabledButton: {
-    backgroundColor: '#F3F4F6',
-  },
-  actionButtonText: {
+  reviewButtonText: {
     fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
-  },
-  disabledButtonText: {
-    color: '#9CA3AF',
   },
 });

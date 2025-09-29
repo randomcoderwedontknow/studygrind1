@@ -16,7 +16,6 @@ export interface UserProfile {
   id: string;
   name: string;
   email: string;
-  role?: string;
   level: number;
   experience_points: number;
   focus_points: number;
