@@ -1,20 +1,10 @@
 import { Tabs } from 'expo-router';
-import { 
-  Chrome as Home, 
-  SquareCheck as CheckSquare, 
-  Timer, 
-  Settings,
-  FileText,
-  ShoppingBag,
-  BookOpen,
-  User,
-  Gamepad2
-} from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore } from '@/stores/themeStore';
 
 export default function TabLayout() {
   const { currentTheme } = useThemeStore();
-  
+
   return (
     <Tabs
       screenOptions={{
@@ -40,7 +30,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ size, color }) => (
-            <Home size={size} color={color} />
+            <Ionicons name="home-outline" size={size} color={color} />
           ),
         }}
       />
@@ -49,7 +39,7 @@ export default function TabLayout() {
         options={{
           title: 'Tasks',
           tabBarIcon: ({ size, color }) => (
-            <CheckSquare size={size} color={color} />
+            <Ionicons name="checkbox-outline" size={size} color={color} />
           ),
         }}
       />
@@ -58,7 +48,7 @@ export default function TabLayout() {
         options={{
           title: 'Timer',
           tabBarIcon: ({ size, color }) => (
-            <Timer size={size} color={color} />
+            <Ionicons name="timer-outline" size={size} color={color} />
           ),
         }}
       />
@@ -67,7 +57,7 @@ export default function TabLayout() {
         options={{
           title: 'Cards',
           tabBarIcon: ({ size, color }) => (
-            <BookOpen size={size} color={color} />
+            <Ionicons name="book-outline" size={size} color={color} />
           ),
         }}
       />
@@ -76,16 +66,7 @@ export default function TabLayout() {
         options={{
           title: 'Notes',
           tabBarIcon: ({ size, color }) => (
-            <FileText size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="focus-shop"
-        options={{
-          title: 'Shop',
-          tabBarIcon: ({ size, color }) => (
-            <ShoppingBag size={size} color={color} />
+            <Ionicons name="document-text-outline" size={size} color={color} />
           ),
         }}
       />
@@ -94,16 +75,7 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ size, color }) => (
-            <User size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="games"
-        options={{
-          title: 'Games',
-          tabBarIcon: ({ size, color }) => (
-            <Gamepad2 size={size} color={color} />
+            <Ionicons name="person-outline" size={size} color={color} />
           ),
         }}
       />
@@ -112,7 +84,7 @@ export default function TabLayout() {
         options={{
           title: 'Settings',
           tabBarIcon: ({ size, color }) => (
-            <Settings size={size} color={color} />
+            <Ionicons name="settings-outline" size={size} color={color} />
           ),
         }}
       />
